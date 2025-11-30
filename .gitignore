@@ -60,3 +60,6 @@ logs/
 *.tmp
 *.temp
 
+# Project documents (keep local)
+*.docx
+
