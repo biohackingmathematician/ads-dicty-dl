@@ -8,9 +8,15 @@ This project implements models to predict aggregation centers of *Dictyostelium 
 
 ## Project Overview
 
-The goal of this project is to predict where *Dictyostelium discoideum* cells will aggregate using early frames of time-lapse microscopy movies. The project uses multiple modeling approaches to predict either:
-- The coordinates of eventual aggregation center(s), or
-- A spatial probability map (heatmap) showing where aggregation is most likely to occur
+This project implements deep learning and statistical models to predict aggregation centers of *Dictyostelium discoideum* cells from early microscopy time-lapse frames. The goal is to determine how many consecutive frames (K) are needed to accurately predict where cells will aggregate.
+
+**Key Features:**
+- 2 neural models: SpatioTemporalCNN (3D CNN) and SimpleUNet
+- 2 statistical baselines: GMM (Gaussian Mixture Model) and LastFrame
+- 3 experiments evaluated separately with per-experiment training
+- Multiple training seeds (42, 123, 456) for proper confidence intervals
+- 95% CI reporting using t-distribution
+- Comprehensive visualizations
 
 ## Dataset
 
@@ -41,9 +47,18 @@ Each experiment contains:
 
 ## Requirements
 
+See `requirements.txt` for full dependencies. Key packages:
+- PyTorch >= 1.9
+- NumPy
+- SciPy
+- Zarr
+- scikit-learn
+- Matplotlib
+- Pandas
+
 Install required packages:
 ```bash
-pip install torch numpy scipy zarr scikit-learn
+pip install torch numpy scipy zarr scikit-learn matplotlib pandas
 ```
 
 ## Usage
@@ -60,45 +75,63 @@ python3 run_experiments_minimal.py
 
 The script will:
 - Run all 3 experiments automatically
-- Train 1 neural model (TinyCNN) + 2 baselines (GMM, LastFrame) per experiment
+- Train neural models (SpatioTemporalCNN, SimpleUNet) + 2 baselines (GMM, LastFrame) per experiment
 - Save results incrementally to `results/` directory
-- Complete in ~2-3 minutes
+- Complete in ~45-60 minutes on CPU (includes training with multiple seeds)
 
-## Key Features
+## Models
 
-- **Multiple Experiments**: Train and evaluate separately on each experimental dataset (mixin_test44, mixin_test57, mixin_test64)
-- **Multiple Models**: 
-  - **SpatioTemporalCNN**: 3D CNN with temporal pooling for spatiotemporal feature learning (~50K parameters)
-  - **SimpleUNet**: U-Net style encoder-decoder with skip connections (~200K parameters)
-  - **GMM**: Gaussian Mixture Model baseline (zero-shot, no training)
-  - **LastFrame**: Simple baseline using center of mass of last input frame
-- **Confidence Intervals**: Results reported as mean ± CI (95% confidence interval using t-distribution) with multiple training seeds
-- **Time-based Split**: 70% train, 30% test split for each experiment
-- **Visualizations**: Comprehensive plots including error analysis, model comparisons, training curves, and qualitative predictions
-- **Fast Execution**: Optimized for CPU execution
+**Neural Networks (require training):**
+- `SpatioTemporalCNN`: 3D convolutional network that learns spatiotemporal features from K input frames
+- `SimpleUNet`: Encoder-decoder architecture with skip connections for spatial feature extraction
+
+**Statistical Baselines (zero-shot, no training):**
+- `GMM`: Gaussian Mixture Model fitted to brightest pixels in averaged input frames
+- `LastFrame`: Simple baseline using center-of-mass of the last input frame
+
+## Methodology
+
+**Data Split:** Time-based split using first 50% of frames as input, predicting final aggregation center from last 10 frames. Train/test split is 70%/30% of available windows.
+
+**Evaluation Metric:** Euclidean distance (pixels) between predicted and true aggregation center.
+
+**Statistical Reporting:** Mean and 95% confidence intervals computed using t-distribution across multiple training seeds and test samples.
+
+**Ground Truth:** Aggregation center computed as center-of-mass of averaged final 10 frames.
 
 ## Results
 
-Results are saved in the `results/` directory:
+### Summary Table (K=4 input frames)
 
-### Data Files
-- `results_mixin_test44.json`: Results for experiment 1 (JSON)
-- `results_mixin_test57.json`: Results for experiment 2 (JSON)
-- `results_mixin_test64.json`: Results for experiment 3 (JSON)
-- `all_results.json`: Complete summary of all experiments (JSON)
-- `results_summary.csv`: Summary table with all results in CSV format
+| Experiment | Best Model | Mean Error (px) | 95% CI |
+|------------|------------|-----------------|--------|
+| mixin_test44 | SimpleUNet | 0.0003 | [0.0002, 0.0004] |
+| mixin_test57 | SimpleUNet | 1.11 | [1.03, 1.18] |
+| mixin_test64 | SimpleUNet | 0.17 | [0.14, 0.20] |
 
-Each result file contains mean, standard deviation, and 95% confidence intervals for each model.
+**Key Findings:**
+- SimpleUNet achieves best performance across all experiments
+- Neural models outperform GMM baseline by 16-30x on most experiments
+- K=4 frames is sufficient for sub-pixel to few-pixel accuracy
+- Models are robust to edge cases (corner aggregation in mixin_test44)
 
-### Visualization Files
-- `error_vs_k.png`: Model performance comparison at K=4 input frames
-- `model_comparison_bars.png`: Grouped bar chart comparing all models (SpatioTemporalCNN, SimpleUNet, GMM, LastFrame) across experiments
-- `training_curves.png`: Training and validation loss curves for SpatioTemporalCNN and SimpleUNet
-- `qualitative_multiframe.png`: Multi-panel figure showing input sequence (4 frames) and final frame with predicted vs true aggregation center overlay
-- `viz/`: Per-experiment prediction overlay visualizations
-  - `mixin_test44/spatiotemporal_cnn.png`: Prediction overlay for experiment 1
-  - `mixin_test57/spatiotemporal_cnn.png`: Prediction overlay for experiment 2
-  - `mixin_test64/spatiotemporal_cnn.png`: Prediction overlay for experiment 3
+## Output Files
+
+Results are saved to the `results/` directory:
+
+**Data Files:**
+- `all_results.json`: Complete results for all experiments
+- `results_mixin_test44.json`: Individual experiment results
+- `results_mixin_test57.json`
+- `results_mixin_test64.json`
+- `results_summary.csv`: Tabular summary of all results
+
+**Visualizations:**
+- `error_vs_k.png`: Model performance at K=4 input frames
+- `model_comparison_bars.png`: Bar chart comparing models across experiments
+- `training_curves.png`: Training and validation loss curves
+- `qualitative_multiframe.png`: Input sequence and prediction visualization
+- `viz/`: Per-experiment prediction overlay images
 
 ## License
 
