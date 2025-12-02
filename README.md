@@ -24,7 +24,7 @@ Each experiment contains:
 - **Subsampled zarr files**: Used for evaluation and robustness testing
 
 ## Project Structure
-
+- `Agna-DL-pytorch.ipynb`: PyTorch Basics Exercises Completed - Deep Learning & Data Analysis
 - `Agna-slime-mold.ipynb`: Main project notebook with models and experiments
 - `run_experiments_minimal.py`: Standalone script for running all experiments (alternative to notebook)
 - `results/`: Directory containing experiment results (JSON files)
