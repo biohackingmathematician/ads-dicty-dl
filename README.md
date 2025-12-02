@@ -26,36 +26,55 @@ Each experiment contains:
 ## Project Structure
 
 - `Agna-slime-mold.ipynb`: Main project notebook with models and experiments
-- `Agna-DL-pytorch.ipynb`: PyTorch learning exercises (prerequisites)
+- `run_experiments_minimal.py`: Standalone script for running all experiments (alternative to notebook)
+- `results/`: Directory containing experiment results (JSON files)
 - `data/`: Directory containing experimental data in zarr format
 
 ## Requirements
 
 Install required packages:
 ```bash
-pip install torch numpy matplotlib zarr numcodecs tifffile h5py scikit-image tqdm
+pip install torch numpy scipy zarr scikit-learn
 ```
 
 ## Usage
 
-1. Open `Agna-slime-mold.ipynb` in Jupyter
-2. Set `EXPERIMENT_NAME` to choose which experiment to analyze
-3. Run cells sequentially to:
-   - Load and visualize data
-   - Train models on original data
-   - Evaluate on subsampled data
-   - Run automated experiments across all datasets
+### Option 1: Jupyter Notebook
+1. Open `Agna-slime-mold.ipynb` in Jupyter Lab or Jupyter Notebook
+2. Run cells sequentially (or "Run All")
+3. Results will be saved to `results/` directory
+
+### Option 2: Standalone Script
+```bash
+python3 run_experiments_minimal.py
+```
+
+The script will:
+- Run all 3 experiments automatically
+- Train 1 neural model (TinyCNN) + 2 baselines (GMM, LastFrame) per experiment
+- Save results incrementally to `results/` directory
+- Complete in ~2-3 minutes
 
 ## Key Features
 
-- **Multiple Experiments**: Train and evaluate separately on each experimental dataset
-- **Robustness Testing**: Evaluate models trained on original data using subsampled data
-- **Automated Runs**: Run multiple training runs with different seeds to compute confidence intervals
-- **Multiple Models**: Baseline CNN plus additional modeling approaches
+- **Multiple Experiments**: Train and evaluate separately on each experimental dataset (mixin_test44, mixin_test57, mixin_test64)
+- **Multiple Models**: 
+  - TinyCNN: Lightweight neural network (~20K parameters)
+  - GMM: Gaussian Mixture Model baseline (zero-shot)
+  - LastFrame: Simple baseline using last input frame
+- **Confidence Intervals**: Results reported as mean ± CI (95% confidence interval using t-distribution)
+- **Time-based Split**: 70% train, 30% test split for each experiment
+- **Fast Execution**: Optimized for CPU, completes in ~2-3 minutes
 
 ## Results
 
-Results are reported as mean ± CI (confidence interval) from multiple training runs on the same data, following standard ML practice.
+Results are saved as JSON files in the `results/` directory:
+- `results_mixin_test44.json`: Results for experiment 1
+- `results_mixin_test57.json`: Results for experiment 2
+- `results_mixin_test64.json`: Results for experiment 3
+- `all_results.json`: Complete summary of all experiments
+
+Each result file contains mean, standard deviation, and 95% confidence intervals for each model.
 
 ## License
 
